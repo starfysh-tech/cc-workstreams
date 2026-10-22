@@ -1,6 +1,6 @@
 # workstreams — design
 
-Personal Claude Code mod. Default interface across all projects. Not built for other users.
+Personal Claude Code mod. Default interface across all projects. Built for one setup: macOS, cmux and the `gh` CLI. Other setups work in part.
 
 Goal: triage many parallel Claude Code sessions in cost-first order, then switch into the real session to act, the way the agents view does.
 
