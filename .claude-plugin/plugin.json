@@ -1,0 +1,22 @@
+{
+  "name": "workstreams",
+  "version": "0.1.0",
+  "description": "Triage and jump between parallel Claude Code sessions across projects.",
+  "author": {
+    "name": "Randall"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "motion": {
+      "type": "string",
+      "title": "Motion",
+      "description": "Panel animation: on, calm (no flash or meter slide), or off.",
+      "options": [
+        "on",
+        "calm",
+        "off"
+      ],
+      "default": "on"
+    }
+  }
+}

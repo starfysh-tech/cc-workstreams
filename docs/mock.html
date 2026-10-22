@@ -1,0 +1,489 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Workstreams TUI v2</title><style>
+:root{--bg:#f6f5f2;--fg:#1d1d1f;--muted:#5f6368;--card:#fff;--line:#d9d6cf;--acc:#6f42c1;--ok:#1a7f37;--no:#9a6700;--bad:#cf222e}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121214;--fg:#e8e6e3;--muted:#9a9a9f;--card:#1b1b1f;--line:#2e2e33;--acc:#b392f0;--ok:#4ac26b;--no:#d29922;--bad:#f85149}}
+:root[data-theme="dark"]{--bg:#121214;--fg:#e8e6e3;--muted:#9a9a9f;--card:#1b1b1f;--line:#2e2e33;--acc:#b392f0;--ok:#4ac26b;--no:#d29922;--bad:#f85149}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+main{max-width:1280px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:20px;margin:0 0 8px}h2{font-size:17px;margin:40px 0 6px;padding-top:12px;border-top:1px solid var(--line)}
+h3{font-size:14px;margin:20px 0 2px;color:var(--acc)}
+p{margin:4px 0 8px;max-width:90ch}.cap,.intro{color:var(--muted)}
+code{background:var(--card);border:1px solid var(--line);padding:0 4px;border-radius:4px}
+ul{padding-left:20px}li{margin:3px 0}
+.sub{min-width:0}
+.term{margin:10px 0;background:#0d1117;border:1px solid #30363d;border-radius:8px;overflow:hidden;min-width:0}
+.term figcaption{font-size:12px;color:#8b949e;padding:6px 10px;background:#161b22;border-bottom:1px solid #30363d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dots i{display:inline-block;width:9px;height:9px;border-radius:50%;background:#484f58;margin-right:5px}
+.scroll{overflow-x:auto}
+.screen{display:grid;grid-template-columns:2fr 1fr;min-width:1180px;color:#c9d1d9;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.screen.solo{grid-template-columns:1fr;min-width:780px}
+.left{position:relative;display:flex;flex-direction:column;padding:10px 14px;min-width:0}
+.left .tx{flex:1}
+.panel{border-left:1px solid #3d444d;background:#0b0f14;padding:8px 10px;display:flex;flex-direction:column;min-width:0}
+.panel .rows{flex:0}.panel .grow{flex:1}
+pre{margin:0;font:inherit;white-space:pre}
+.mini{margin:0;padding:10px 12px;overflow-x:auto;color:#c9d1d9;background:#0d1117;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.pbox{border:1px solid #6e7681;border-radius:6px;padding:2px 8px;margin:8px 0 4px;color:#c9d1d9}
+.toastov{position:absolute;top:10px;right:14px;background:#1c2128;border:1px solid #d29922;border-radius:6px;padding:4px 10px;color:#e6edf3;box-shadow:0 4px 14px rgba(0,0,0,.5);white-space:nowrap}
+.toastov.ok{border-color:#3fb950}
+.w1{display:inline-block;width:1ch;text-align:center;overflow:visible}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:0 14px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:0 14px}
+.dim{color:#6e7681}.g{color:#3fb950}.r{color:#f85149}.y{color:#d29922}.c{color:#39c5cf}.m{color:#bc8cff}.b{font-weight:700;color:#e6edf3}
+.sl{color:#9da5ae}.k{color:#39c5cf;font-weight:700}
+.cur{background:#264f78;color:#fff}
+.faded{opacity:.45}
+.ann{color:#ff7eb6;font-style:italic}
+.chip{background:#30363d;color:#e6edf3;border-radius:3px}
+.chipm{background:#3b2e58;color:#d2b8ff;border-radius:3px}
+.chipv{background:#5a1e1e;color:#ffb3ad;border-radius:3px}
+.tp{color:#f0b429;font-weight:700}.tt{color:#39c5cf;font-weight:700}.tr{color:#bc8cff;font-weight:700}
+.tw{color:#56a35f}.tx2{color:#58a6ff;font-weight:700}.to{color:#f85149;font-weight:700}
+.card{background:#0d1117;border:1px solid #30363d;border-radius:8px;margin:10px 0;overflow:hidden}
+.card .hd{font-size:12px;color:#8b949e;padding:6px 10px;background:#161b22;border-bottom:1px solid #30363d}
+.card.refuse{border-color:#f85149}.card.confirm{border-color:#d29922}
+.note{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:10px 0}
+</style></head><body><main>
+<h1>workstreams mod · mock states v2</h1>
+<p class="intro">Personal Claude Code mod, loaded in every project. Reply by number, e.g. “3b: …”. Pink ◂ labels are annotations outside the UI. Sort order: APPROVE / PICK → YOUR TURN → REVIEW → WORKING → WRAP? / ORPHANED. Rows idle more than 7 days are dimmed. <span class="c">↻</span> marks a row whose session is not running.</p>
+
+<!-- ============ 1 ============ -->
+<section id="s1"><h2>1. Toast overlay</h2>
+<p>No band above the prompt. When a workstream changes to needing you, a toast appears top-right over the transcript, where the panel would dock. It fades after a few seconds.</p>
+
+<h3>1a · toast appears</h3>
+<figure class="term"><figcaption><span class="dots"><i></i><i></i><i></i></span>acme-api/lane-mods · fullscreen</figcaption>
+<div class="scroll"><div class="screen solo"><div class="left">
+<div class="toastov"><span class="tp">▸ APPROVE</span> · Bash: mise run migrate <span class="dim">(pgaudit-doc-settings)</span></div>
+<pre class="tx"><span class="dim">&gt;</span> draft the panel layout for workstreams
+
+<span class="g">●</span> Read(mods/workstreams/panel.tsx)
+  <span class="dim">⎿  Read 120 lines</span>
+
+<span class="g">●</span> Update(mods/workstreams/panel.tsx)
+  <span class="dim">⎿  Updated with 18 additions and 4 removals</span>
+
+<span class="g">●</span> Panel docks right, preview below the list.
+
+<span class="y">✻</span> Drafting… <span class="dim">(31s · esc to interrupt)</span>
+</pre>
+<div class="pbox">&gt; <span class="dim">█</span></div>
+<pre class="sl">   Opus 5.5  [<span class="g">███</span><span class="dim">░░░░░░░░░░░░░</span>] 204k/1.0M (20%)  |  lane-mods  (+0,-0)  |  ~/C/a/.c/w/lane-mods
+   v2.1.295  23.6G/64.0G  |  43.0%  1d 8hr 12m  |  [<span class="g">█</span><span class="dim">░░░░░░░░░░░░░░░</span>] 6.0%  2hr 21m
+<span class="m">  ⏵⏵ auto mode on (shift+tab to cycle)</span></pre>
+</div></div></div></figure>
+
+<h3>1b · after the fade</h3>
+<p class="cap">Nothing left on screen. The status line below the prompt is unchanged.</p>
+<figure class="term"><figcaption><span class="dots"><i></i><i></i><i></i></span>acme-api/lane-mods · fullscreen · a few seconds later</figcaption>
+<div class="scroll"><div class="screen solo"><div class="left">
+<pre class="tx"><span class="dim">&gt;</span> draft the panel layout for workstreams
+
+<span class="g">●</span> Read(mods/workstreams/panel.tsx)
+  <span class="dim">⎿  Read 120 lines</span>
+
+<span class="g">●</span> Update(mods/workstreams/panel.tsx)
+  <span class="dim">⎿  Updated with 18 additions and 4 removals</span>
+
+<span class="g">●</span> Panel docks right, preview below the list.
+
+<span class="y">✻</span> Drafting… <span class="dim">(33s · esc to interrupt)</span>
+</pre>
+<div class="pbox">&gt; <span class="dim">█</span></div>
+<pre class="sl">   Opus 5.5  [<span class="g">███</span><span class="dim">░░░░░░░░░░░░░</span>] 204k/1.0M (20%)  |  lane-mods  (+0,-0)  |  ~/C/a/.c/w/lane-mods
+   v2.1.295  23.6G/64.0G  |  43.0%  1d 8hr 12m  |  [<span class="g">█</span><span class="dim">░░░░░░░░░░░░░░░</span>] 6.0%  2hr 21m
+<span class="m">  ⏵⏵ auto mode on (shift+tab to cycle)</span></pre>
+</div></div></div></figure>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2"><h2>2. Panel open (^L) · hero</h2>
+<p>Panel docks on the right third, floor to ceiling. List → preview of the selected row → footer. Cursor on the PICK row. Esc closes.</p>
+<figure class="term"><figcaption><span class="dots"><i></i><i></i><i></i></span>acme-api/lane-mods · fullscreen · ^L</figcaption>
+<div class="scroll"><div class="screen"><div class="left">
+<pre class="tx"><span class="dim">&gt;</span> draft the panel layout for workstreams
+
+<span class="g">●</span> Read(mods/workstreams/panel.tsx)
+  <span class="dim">⎿  Read 120 lines</span>
+
+<span class="g">●</span> Update(mods/workstreams/panel.tsx)
+  <span class="dim">⎿  Updated with 18 additions and 4 removals</span>
+
+<span class="g">●</span> Panel docks right, preview below the list.
+
+<span class="y">✻</span> Drafting… <span class="dim">(41s · esc to interrupt)</span>
+</pre>
+<div class="pbox">&gt; <span class="dim">█</span></div>
+<pre class="sl">   Opus 5.5  [<span class="g">███</span><span class="dim">░░░░░░░░░░░░░</span>] 204k/1.0M (20%)  |  lane-mods  (+0,-0)  |  ~/C/a/.c/w/lane-mods
+   v2.1.295  23.6G/64.0G  |  43.0%  1d 8hr 12m  |  [<span class="g">█</span><span class="dim">░░░░░░░░░░░░░░░</span>] 6.0%  2hr 21m
+<span class="m">  ⏵⏵ auto mode on (shift+tab to cycle)</span></pre>
+</div>
+<div class="panel">
+<pre class="rows"><span class="b">workstreams</span>  <span class="dim">10 · 2 need you</span>
+<span class="cur"><span class="w1">▶</span> <span class="tp">PICK</span>      Which timezone drives send…    4m                 </span>
+  <span class="tp">APPROVE</span>   Bash: mise run migrate         1m
+  <span class="tt">YOUR TURN</span> Ready to merge? 1. squash…    22m
+  <span class="tt">YOUR TURN</span> Review notes posted <span class="c">↻ resume</span>   2h  #2689 <span class="g">✓CI</span> <span class="r">✗appr</span>
+  <span class="tr">REVIEW</span>    diff ready, 3 files           12m  #2701 <span class="g">✓CI</span> <span class="r">✗appr</span>
+  <span class="tw">WORKING</span>   drafting register.tsx           —
+  <span class="tw">WORKING</span>   running tests                   —
+  <span class="tx2">WRAP?</span>     PR #2667 merged · clean…       3d  #2667 <span class="m">merged</span>
+  <span class="to">ORPHANED</span>  dir removed, session still…     —
+<span class="dim">  YOUR TURN Read-only analysis… ↻ resume  28d</span>
+</pre>
+<pre class="grow"><span class="dim">── preview ─────────────────────────────────────────────</span>
+ <span class="b">acme-api / send-time-tz</span>  <span class="chip"> feat/send-time-tz </span>  <span class="g">+142</span> <span class="r">−37</span>
+ ctx <span class="y">███████</span><span class="dim">░░░</span> <span class="y">72%</span>  720k/1.0M   <span class="chipm"> Opus 5.5 </span>
+
+ <span class="tp">PICK</span> · Which timezone drives send time?
+   <span class="k">1.</span> User's phone timezone
+   <span class="k">2.</span> Account timezone
+   <span class="k">3.</span> SwitchBird inbox local_time_zone
+   <span class="k">4.</span> Type something else
+
+<span class="dim">── your last instruction ──</span>
+ wire send time to the per-user schedule
+<span class="dim">── last turn ──</span>
+ Read schedule.py and sync.py. Found two tz sources;
+ asked which one wins.
+
+ <span class="dim">repo</span>  <span class="g">clean</span> · 0 unpushed · <span class="dim">no PR</span>
+</pre>
+<pre><span class="dim">────────────────────────────────────────────────────────</span>
+ RAM   [<span class="g">██████</span><span class="dim">░░░░░░░░░░</span>] 23.6G/64.0G
+ week  [<span class="g">███████</span><span class="dim">░░░░░░░░░</span>] 43%   <span class="dim">↻ 1d 8h</span>
+ 5h    [<span class="g">█</span><span class="dim">░░░░░░░░░░░░░░░</span>] 6%
+<span class="dim"> tab/j/k move · ⏎ go · a archive · esc close</span></pre>
+</div></div></div></figure>
+<p class="cap">Gauge colors: green below 60%, amber 60–85%, red above 85%. No version chip here because every session runs v2.1.295.</p>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3"><h2>3. Preview variants</h2>
+<p>Preview region only. The header always shows that workstream's own session facts.</p>
+<div class="grid3">
+
+<div class="sub"><h3>3a · APPROVE</h3>
+<pre class="mini"> <span class="b">acme-api / pgaudit-doc-settings</span>  <span class="chip"> docs/pgaudit </span>  <span class="g">+12</span> <span class="r">−3</span>
+ ctx <span class="g">███</span><span class="dim">░░░░░░░</span> <span class="g">31%</span>  310k/1.0M   <span class="chipm"> Opus 5.5 </span>
+
+ <span class="tp">APPROVE</span> · Bash
+ ┌──────────────────────────────────────┐
+ │ <span class="b">mise run migrate</span>                     │
+ └──────────────────────────────────────┘
+   <span class="k">1.</span> Yes  <span class="k">2.</span> Yes, don't ask again  <span class="k">3.</span> No
+
+<span class="dim">── your last instruction ──</span>
+ apply the settings migration locally
+<span class="dim">── last turn ──</span>
+ Wrote 0042_pgaudit_settings.py; wants to migrate.
+
+ <span class="dim">repo</span>  <span class="y">2 changed</span> · 1 unpushed · <span class="dim">no PR</span></pre>
+<p class="cap">Answer it in that lane. The mod does not take answers.</p></div>
+
+<div class="sub"><h3>3b · YOUR TURN (prose question)</h3>
+<pre class="mini"> <span class="b">gapbot / retry-backoff</span>  <span class="chip"> fix/retry-backoff </span>  <span class="g">+58</span> <span class="r">−21</span>
+ ctx <span class="r">█████████</span><span class="dim">░</span> <span class="r">88%</span>  880k/1.0M   <span class="chipm"> Opus 5.5 </span>
+
+ <span class="tt">YOUR TURN</span> · last message
+ Tests pass. Ready to merge?
+   1. squash
+   2. rebase
+
+<span class="dim">── your last instruction ──</span>
+ cap retries at 5 with jitter
+<span class="dim">── last turn ──</span>
+ Ran pytest (41 passed). Pushed. Asked how to merge.
+
+ <span class="dim">repo</span>  <span class="g">clean</span> · 0 unpushed · <span class="dim">no PR</span></pre>
+<p class="cap">Prose questions show the last message verbatim. The mod does not parse them into options.</p></div>
+
+<div class="sub"><h3>3c · REVIEW (PR checks)</h3>
+<pre class="mini"> <span class="b">acme-api / report-download</span>  <span class="chip"> feat/report-dl </span>  <span class="g">+203</span> <span class="r">−48</span>
+ ctx <span class="g">████</span><span class="dim">░░░░░░</span> <span class="g">44%</span>  440k/1.0M   <span class="chipm"> Opus 5.5 </span>
+
+ <span class="tr">REVIEW</span> · diff ready, 3 files
+   server/acme/surveys/export.py      <span class="g">+120</span> <span class="r">−30</span>
+   server/acme/surveys/views.py        <span class="g">+41</span> <span class="r">−12</span>
+   client/src/pages/Export.tsx          <span class="g">+42</span>  <span class="r">−6</span>
+ PR #2701   <span class="g">✓ CI</span>   <span class="r">✗ approval</span>   <span class="g">✓ mergeable</span>
+
+<span class="dim">── your last instruction ──</span>
+ open the PR when tests pass
+<span class="dim">── last turn ──</span>
+ Opened #2701. CI green. Waiting on review.
+
+ <span class="dim">repo</span>  <span class="g">clean</span> · 0 unpushed · <span class="dim">PR #2701 open</span></pre></div>
+
+<div class="sub"><h3>3d · WRAP?</h3>
+<pre class="mini"> <span class="b">acme-api / partner-export</span>  <span class="chip"> feat/partner-export </span>  <span class="dim">+0 −0</span>
+ ctx <span class="g">██</span><span class="dim">░░░░░░░░</span> <span class="g">18%</span>  180k/1.0M   <span class="chipm"> Opus 5.5 </span>
+
+ <span class="tx2">WRAP?</span> · looks finished
+   <span class="g">✓</span> PR #2667 merged
+   <span class="g">✓</span> worktree clean
+   <span class="g">✓</span> 0 unpushed
+   <span class="g">✓</span> idle 3d, session not running
+
+ <span class="k">a</span> archive → mise run lane rm partner-export
+
+ <span class="dim">repo</span>  <span class="g">clean</span> · 0 unpushed · <span class="m">PR #2667 merged</span></pre></div>
+
+<div class="sub"><h3>3e · ORPHANED</h3>
+<pre class="mini"> <span class="b">starfysh / old-spike</span>  <span class="chip"> spike/wasm </span>  <span class="dim">git: n/a</span>
+ ctx <span class="g">█</span><span class="dim">░░░░░░░░░</span> <span class="g">9%</span>   90k/1.0M   <span class="chipm"> Opus 5.5 </span>
+
+ <span class="to">ORPHANED</span> · directory removed
+   ~/Code/starfysh/.worktrees/old-spike
+   session still running (pid 51022)
+
+ <span class="k">⏎</span> go to the session and exit it there
+ <span class="dim">archive refused while the session is live</span>
+
+ <span class="dim">repo</span>  <span class="r">directory missing</span></pre></div>
+
+<div class="sub"><h3>3f · ↻ resume</h3>
+<pre class="mini"> <span class="b">acme-api / pr-2689</span>  <span class="chip"> pr-2689 </span>  <span class="g">+9</span> <span class="r">−2</span>
+ ctx <span class="y">██████</span><span class="dim">░░░░</span> <span class="y">63%</span>  630k/1.0M   <span class="chipm"> Opus 5.5 </span>
+
+ <span class="tt">YOUR TURN</span> · <span class="c">↻ session not running</span>
+ Review notes posted on #2689. Two blocking.
+
+<span class="dim">── your last instruction ──</span>
+ review PR 2689 against the spec
+<span class="dim">── last turn ──</span>
+ Posted 6 comments. Session ended 2h ago.
+
+ <span class="k">⏎</span> go resumes it: claude --resume 7c1e…
+
+ <span class="dim">repo</span>  <span class="g">clean</span> · 0 unpushed · PR #2689 <span class="g">✓CI</span> <span class="r">✗appr</span></pre></div>
+
+<div class="sub"><h3>3g · dimmed (idle &gt; 7 days)</h3>
+<pre class="mini"><span class="cur"><span class="w1">▶</span> YOUR TURN Read-only analysis… ↻ resume  28d   </span>
+
+<span class="faded"> <span class="b">gapbot / audit-readonly</span>  <span class="chip"> audit-readonly </span>  <span class="dim">+0 −0</span>
+ ctx <span class="y">███████</span><span class="dim">░░░</span> <span class="y">70%</span>  700k/1.0M   <span class="chipm"> Opus 5.5 </span>
+
+ <span class="tt">YOUR TURN</span> · <span class="c">↻ session not running</span> · idle 28d
+ Read-only analysis done. Want a write-up?
+
+<span class="dim">── your last instruction ──</span>
+ map where retries happen, change nothing
+<span class="dim">── last turn ──</span>
+ Listed 7 call sites. Asked about a write-up.
+
+ <span class="dim">repo</span>  clean · 0 unpushed · no PR</span></pre>
+<p class="cap">Row and preview render dimmed. Still selectable.</p></div>
+
+</div></section>
+
+<!-- ============ 4 ============ -->
+<section id="s4"><h2>4. Footer threshold states</h2>
+<div class="grid">
+<div class="sub"><h3>4a · normal</h3>
+<pre class="mini"><span class="dim">────────────────────────────────────────────────────────</span>
+ RAM   [<span class="g">██████</span><span class="dim">░░░░░░░░░░</span>] 23.6G/64.0G
+ week  [<span class="g">███████</span><span class="dim">░░░░░░░░░</span>] 43%   <span class="dim">↻ 1d 8h</span>
+ 5h    [<span class="g">█</span><span class="dim">░░░░░░░░░░░░░░░</span>] 6%
+<span class="dim"> tab/j/k move · ⏎ go · a archive · esc close</span></pre>
+<p class="cap">All sessions on one version, so no version shown.</p></div>
+<div class="sub"><h3>4b · warning</h3>
+<pre class="mini"><span class="dim">────────────────────────────────────────────────────────</span>
+ RAM   [<span class="r">███████████████</span><span class="dim">░</span>] <span class="r">58.0G/64.0G</span>
+ week  [<span class="y">█████████████</span><span class="dim">░░░</span>] <span class="y">82%</span>   <span class="dim">↻ 1d 8h</span>
+ 5h    [<span class="g">█</span><span class="dim">░░░░░░░░░░░░░░░</span>] 6%
+ <span class="chipv"> v2.1.295 / v2.1.290 ×2 </span>
+<span class="dim"> tab/j/k move · ⏎ go · a archive · esc close</span></pre>
+<p class="cap">RAM 91% is red. Week 82% is amber. The version chip appears because two sessions still run v2.1.290.</p></div>
+</div></section>
+
+<!-- ============ 5 ============ -->
+<section id="s5"><h2>5. ⏎ go</h2>
+<h3>5a · with the cmux focus adapter</h3>
+<p class="cap">⏎ on the APPROVE row. cmux focuses lane B's pane. You land in its real prompt with its own status line.</p>
+<figure class="term"><figcaption><span class="dots"><i></i><i></i><i></i></span>acme-api/pgaudit-doc-settings · fullscreen · lane B</figcaption>
+<div class="scroll"><div class="screen solo"><div class="left">
+<pre class="tx"><span class="g">●</span> Write(server/acme/ops/migrations/0042_pgaudit_settings.py)
+  <span class="dim">⎿  Wrote 38 lines</span>
+
+<span class="y">●</span> Bash(mise run migrate)
+
+ Do you want to proceed?
+ <span class="k">❯ 1. Yes</span>
+   2. Yes, and don't ask again for mise run migrate
+   3. No, and tell Claude what to do differently
+</pre>
+<pre class="sl">   Opus 5.5  [<span class="g">█████</span><span class="dim">░░░░░░░░░░░</span>] 310k/1.0M (31%)  |  pgaudit-doc-settings  (+12,-3)  |  ~/C/a/.c/w/pgaudit-doc-settings
+   v2.1.295  23.6G/64.0G  |  43.0%  1d 8hr 12m  |  [<span class="g">█</span><span class="dim">░░░░░░░░░░░░░░░</span>] 6.0%  2hr 21m
+<span class="m">  ⏵⏵ auto mode on (shift+tab to cycle)</span></pre>
+</div></div></div></figure>
+
+<h3>5b · without the adapter</h3>
+<p class="cap">The panel closes and a toast confirms the copied command. Paste it in any terminal.</p>
+<figure class="term"><figcaption><span class="dots"><i></i><i></i><i></i></span>acme-api/lane-mods · fullscreen</figcaption>
+<div class="scroll"><div class="screen solo"><div class="left">
+<div class="toastov ok"><span class="g">Copied:</span> cd ~/Code/acme-api/.claude/worktrees/pgaudit-doc-settings &amp;&amp; claude --resume 3f9c2a…</div>
+<pre class="tx">
+
+<span class="g">●</span> Panel docks right, preview below the list.
+
+<span class="y">✻</span> Drafting… <span class="dim">(52s · esc to interrupt)</span>
+</pre>
+<div class="pbox">&gt; <span class="dim">█</span></div>
+<pre class="sl">   Opus 5.5  [<span class="g">███</span><span class="dim">░░░░░░░░░░░░░</span>] 204k/1.0M (20%)  |  lane-mods  (+0,-0)  |  ~/C/a/.c/w/lane-mods
+   v2.1.295  23.6G/64.0G  |  43.0%  1d 8hr 12m  |  [<span class="g">█</span><span class="dim">░░░░░░░░░░░░░░░</span>] 6.0%  2hr 21m
+<span class="m">  ⏵⏵ auto mode on (shift+tab to cycle)</span></pre>
+</div></div></div></figure>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6"><h2>6. Answer-then-jump loop</h2>
+<p>Three frames, with the cmux adapter.</p>
+<div class="grid3">
+<div class="sub"><h3>6a · answer in lane B</h3>
+<pre class="mini"><span class="dim">pgaudit-doc-settings</span>
+
+<span class="y">●</span> Bash(mise run migrate)
+ <span class="k">❯ 1. Yes</span>      <span class="ann">◂ you press 1</span>
+   2. Yes, and don't ask again
+   3. No
+
+<span class="g">●</span> Bash(mise run migrate)
+  <span class="dim">⎿  Applied ops.0042_pgaudit_settings</span></pre></div>
+<div class="sub"><h3>6b · ^L in lane B</h3>
+<pre class="mini"><span class="b">workstreams</span>  <span class="dim">9 · 1 needs you</span>
+<span class="cur"><span class="w1">▶</span> <span class="tp">PICK</span>      Which timezone drives send…    4m </span>
+  <span class="tt">YOUR TURN</span> Ready to merge? 1. squash…    22m
+  <span class="tt">YOUR TURN</span> Review notes posted <span class="c">↻ resume</span>   2h
+  <span class="tr">REVIEW</span>    diff ready, 3 files           12m
+  <span class="tw">WORKING</span>   applying migration              —
+  <span class="dim">…</span>
+<span class="ann">◂ APPROVE row now WORKING; cursor on top row</span></pre></div>
+<div class="sub"><h3>6c · ⏎ lands in send-time-tz</h3>
+<pre class="mini"><span class="dim">send-time-tz</span>
+
+ Which timezone drives send time?
+ <span class="k">❯ 1. User's phone timezone</span>
+   2. Account timezone
+   3. SwitchBird inbox local_time_zone
+   4. Type something else
+
+<span class="dim">   Opus 5.5  [</span><span class="y">███████████</span><span class="dim">░░░░░] 720k/1.0M (72%)</span></pre></div>
+</div></section>
+
+<!-- ============ 7 ============ -->
+<section id="s7"><h2>7. Archive</h2>
+<div class="grid">
+
+<div class="sub"><h3>7a · archive config (yours)</h3>
+<div class="card"><div class="hd">~/.claude/workstreams.json</div>
+<pre class="mini">{
+  "teardown": {
+    "~/Code/acme-api": "mise run lane rm {slug}"
+  }
+}</pre></div>
+<p class="cap">Projects without an entry fall back to plain git (7d).</p></div>
+
+<div class="sub"><h3>7b · refused</h3>
+<div class="card refuse"><div class="hd">a on YOUR TURN · acme-api / pr-2689</div>
+<pre class="mini"> <span class="r">Can't archive pr-2689</span>
+   <span class="r">✗</span> session is live (pid 48211)
+   <span class="r">✗</span> 2 unpushed commits
+   <span class="r">✗</span> PR #2689 still open
+   <span class="g">✓</span> worktree clean
+
+ <span class="dim">nothing was changed</span>
+ <span class="k">esc</span> back</pre></div></div>
+
+<div class="sub"><h3>7c · confirm (config command)</h3>
+<div class="card confirm"><div class="hd">a on WRAP? · acme-api / partner-export</div>
+<pre class="mini"> Archive partner-export?
+   <span class="g">✓</span> PR #2667 merged   <span class="g">✓</span> clean
+   <span class="g">✓</span> 0 unpushed        <span class="g">✓</span> session not running
+
+ will run (from your archive config):
+   <span class="b">acme-api → mise run lane rm partner-export</span>
+
+ <span class="k">y</span> run · <span class="k">n</span> cancel</pre></div></div>
+
+<div class="sub"><h3>7d · confirm (git fallback)</h3>
+<div class="card confirm"><div class="hd">a on dimmed row · gapbot / audit-readonly</div>
+<pre class="mini"> Archive audit-readonly?
+   <span class="g">✓</span> clean   <span class="g">✓</span> 0 unpushed   <span class="g">✓</span> session not running
+   <span class="dim">no archive config for ~/Code/gapbot</span>
+
+ will run:
+   <span class="b">git worktree remove ~/Code/gapbot/.worktrees/audit-readonly</span>
+   <span class="b">git branch -d audit-readonly</span>
+
+ <span class="k">y</span> run · <span class="k">n</span> cancel</pre></div>
+<p class="cap">No <code>--force</code>. <code>-d</code> refuses an unmerged branch, and the mod reports that failure as-is.</p></div>
+
+<div class="sub"><h3>7e · after</h3>
+<pre class="mini"><span class="g">✓ Archived partner-export</span>  <span class="dim">(toast, fades)</span>
+
+<span class="b">workstreams</span>  <span class="dim">9 · 2 need you</span>
+  <span class="tp">PICK</span>      Which timezone drives send…    4m
+  <span class="tp">APPROVE</span>   Bash: mise run migrate         1m
+  <span class="tt">YOUR TURN</span> Ready to merge? 1. squash…    22m
+  <span class="tt">YOUR TURN</span> Review notes posted <span class="c">↻ resume</span>   2h
+  <span class="tr">REVIEW</span>    diff ready, 3 files           12m
+  <span class="tw">WORKING</span>   drafting register.tsx           —
+  <span class="tw">WORKING</span>   running tests                   —
+<span class="cur"><span class="w1">▶</span> <span class="to">ORPHANED</span>  dir removed, session still…     — </span>
+<span class="dim">  YOUR TURN Read-only analysis… ↻ resume  28d</span></pre>
+<p class="cap">WRAP? row is gone. Cursor moves to the next row.</p></div>
+
+</div></section>
+
+<!-- ============ 8 ============ -->
+<section id="s8"><h2>8. Non-fullscreen fallback</h2>
+<p class="cap">Outside fullscreen mode, ^L opens the pane as a block above the prompt, a third of the height.</p>
+<figure class="term" style="max-width:820px"><figcaption><span class="dots"><i></i><i></i><i></i></span>acme-api/lane-mods · inline mode</figcaption>
+<div class="scroll"><div class="screen solo" style="min-width:700px"><div class="left">
+<pre class="tx dim">● Panel docks right, preview below the list.
+</pre>
+<pre style="border:1px solid #3d444d;border-radius:4px;padding:4px 8px;background:#0b0f14"><span class="cur"><span class="w1">▶</span> <span class="tp">PICK</span>      Which timezone drives send…    4m </span>   <span class="b">send-time-tz</span> <span class="y">72%</span>
+  <span class="tp">APPROVE</span>   Bash: mise run migrate         1m    Which timezone drives
+  <span class="tt">YOUR TURN</span> Ready to merge? 1. squash…    22m    send time? 1. phone …
+  <span class="dim">… 7 more · tab/j/k move · ⏎ go · a archive · esc close</span></pre>
+<div class="pbox">&gt; <span class="dim">█</span></div>
+<pre class="sl">   Opus 5.5  [<span class="g">███</span><span class="dim">░░░░░░░░░░░░░</span>] 204k/1.0M (20%)  |  lane-mods  (+0,-0)
+<span class="m">  ⏵⏵ auto mode on (shift+tab to cycle)</span></pre>
+</div></div></div></figure>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="s9"><h2>9. Status line</h2>
+<p>Your current status line stays as is in the other mocks. With this design it can shrink to one row, because the elements moved into the panel header (per-session context, branch, git changes) and the panel footer (RAM, weekly and 5-hour usage, version).</p>
+<div class="grid">
+<div class="sub"><h3>9a · current, 3 rows</h3>
+<pre class="mini sl">   Opus 5.5  [<span class="g">███</span><span class="dim">░░░░░░░░░░░░░</span>] 204k/1.0M (20%)  |  lane-mods  (+0,-0)  |  ~/C/a/.c/w/lane-mods
+   v2.1.295  23.6G/64.0G  |  43.0%  1d 8hr 12m  |  [<span class="g">█</span><span class="dim">░░░░░░░░░░░░░░░</span>] 6.0%  2hr 21m
+<span class="m">  ⏵⏵ auto mode on (shift+tab to cycle)</span></pre></div>
+<div class="sub"><h3>9b · suggested, 1 row</h3>
+<pre class="mini sl">   Opus 5.5  [<span class="g">███</span><span class="dim">░░░░░░░░░░░░░</span>] 204k/1.0M (20%)  |  lane-mods  (+0,-0)
+<span class="m">  ⏵⏵ auto mode on (shift+tab to cycle)</span></pre>
+<p class="cap">Elements moved into panel header/footer: path, version, RAM, weekly usage, 5-hour usage.</p></div>
+</div></section>
+
+<section id="foot"><h2>Still to verify</h2>
+<ul>
+<li>A user-scope mod loads in worktree sessions and in cmux-wrapped sessions (<code>CLAUDE_CODE_PLUGIN_DIRS</code> or a user marketplace).</li>
+<li>Source for per-session context % (<code>session.measure</code>).</li>
+<li>Toast timeout behaviour while the panel is open.</li>
+</ul>
+<h2>Ruled out</h2>
+<ul>
+<li>Cross-session messaging</li>
+<li>Typing answers in the mod</li>
+<li>Band above the prompt</li>
+<li>Pin</li>
+<li>Auto-delete</li>
+<li>Mod notifications</li>
+<li>Guessing prose questions</li>
+<li>Recap on arrival</li>
+<li>WHERE column</li>
+</ul></section>
+</main></body></html>

@@ -1,0 +1,290 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Workstreams gauges</title><style>
+:root{--page:#f6f6f3;--text:#1b1b1a;--sub:#5f5e5a;--line:#dcdbd5;--card:#ffffff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--page:#111110;--text:#ecebe6;--sub:#a3a29b;--line:#2e2e2b;--card:#191918}}
+:root[data-theme="dark"]{--page:#111110;--text:#ecebe6;--sub:#a3a29b;--line:#2e2e2b;--card:#191918}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--text);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+main{max-width:1120px;margin:0 auto;padding:28px 16px 72px}
+h1{font-size:22px;margin:0 0 6px}
+h2{font-size:17px;margin:44px 0 6px;padding-top:14px;border-top:1px solid var(--line)}
+p{margin:4px 0 10px;max-width:80ch}.sub{color:var(--sub)}
+code{font:13px "SF Mono",Menlo,Consolas,monospace}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px;margin:12px 0}
+.pair.wide{grid-template-columns:repeat(auto-fit,minmax(min(100%,470px),1fr))}
+.pair.stack{grid-template-columns:minmax(0,1fr)}
+figure{margin:0;min-width:0}
+figcaption{font-size:12px;color:var(--sub);margin:0 0 4px}
+/* terminal cells */
+.t{margin:0;padding:12px 14px;border-radius:8px;border:1px solid var(--line);font:13px/1.15 "SF Mono",Menlo,Monaco,"DejaVu Sans Mono",Consolas,monospace;white-space:pre;overflow-x:auto;max-width:100%;background:var(--tb);color:var(--ti)}
+.t i{font-style:normal;display:inline-block;width:1ch;text-align:center}
+.dk{--tb:#1a1a19;--ti:#ffffff;--ts:#c3c2b7;--tm:#898781;--a:#3987e5;--at:#0d366b;--w:#fab219;--wt:#473819;--c:#d03b3b;--ct:#3e2120;--g:#0ca30c;--ad:#3987e5;--rm:#e66767}
+.lt{--tb:#fcfcfb;--ti:#0b0b0b;--ts:#52514e;--tm:#898781;--a:#2a78d6;--at:#cde2fb;--w:#fab219;--wt:#fcedce;--c:#d03b3b;--ct:#f3d5d5;--g:#0ca30c;--ad:#2a78d6;--rm:#e34948}
+.fa{color:var(--a);background:var(--a)}.pa{color:var(--a);background:var(--at)}.ea{background:var(--at)}
+.fw{color:var(--w);background:var(--w)}.pw{color:var(--w);background:var(--wt)}.ew{background:var(--wt)}
+.fc{color:var(--c);background:var(--c)}.pc{color:var(--c);background:var(--ct)}.ec{background:var(--ct)}
+.ka{color:var(--tm);background:var(--at)}.kw{color:var(--tm);background:var(--wt)}.kc{color:var(--tm);background:var(--ct)}
+.qa{color:var(--ti);background:var(--at)}.qfw{color:var(--tb);background:var(--w)}.qfc{color:var(--tb);background:var(--c)}
+.gr{color:var(--rm);background:var(--rm)}.gd{color:var(--ad);background:var(--ad)}
+.chip{background:var(--at)}
+.i{color:var(--ti)}.s{color:var(--ts)}.m{color:var(--tm)}.b{color:var(--ti);font-weight:700}
+.ac{color:var(--a)}.wa{color:var(--w)}.cr{color:var(--c)}.ok{color:var(--g)}
+/* zoom callout */
+.zoom{display:flex;gap:20px;align-items:center;flex-wrap:wrap;padding:16px;border-radius:8px;border:1px solid var(--line);background:var(--tb);color:var(--ti)}
+.cell{position:relative;width:80px;height:160px;background:var(--wt);flex:none}
+.cell::before{content:"";position:absolute;left:0;top:0;bottom:0;width:75%;background:var(--w)}
+.cell::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(to right,transparent 0 calc(12.5% - 1px),rgba(137,135,129,.55) calc(12.5% - 1px) 12.5%)}
+.ladder{font:32px/1 "SF Mono",Menlo,Monaco,monospace;white-space:pre}
+.zt{font-size:13px;max-width:34ch;color:var(--ts)}
+/* legend */
+.tw{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;font-size:14px;margin:8px 0 16px}
+th,td{text-align:left;padding:6px 14px 6px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--sub);font-weight:600}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid var(--line);vertical-align:-2px;margin-right:6px}
+</style></head><body><main>
+<h1>Workstreams gauges</h1>
+<p class="sub">Each block is a terminal render. One character is one cell. Colors are the spec hexes from design.md, Visual language. Every gauge is shown on a dark terminal (#1a1a19) and a light terminal (#fcfcfb).</p>
+
+<section><h2>1. Meter anatomy</h2>
+<p>Full cells are <code>█</code> in the fill color. The partial cell is an eighth-block in the fill color over the track. Empty cells are track background. <code>│</code> in muted ink marks auto-compact at 92%. Labels stay in ink.</p>
+<div class="pair">
+<figure><figcaption>dark terminal</figcaption><pre class="t dk">
+<span class="m">context</span>
+
+<span class="fa">████</span><span class="ea">              </span><span class="ka">│</span><span class="ea"> </span> <span class="i">ctx 20% 200k/1.0M</span>
+
+<span class="fw">████████████</span><span class="pw">▊</span><span class="ew">     </span><span class="kw">│</span><span class="ew"> </span> <span class="i">ctx 64% 640k/1.0M</span>
+
+<span class="fc">█████████████████</span><span class="pc">▎</span><span class="kc">│</span><span class="ec"> </span> <span class="i">ctx 86% 860k/1.0M</span></pre></figure>
+<figure><figcaption>light terminal</figcaption><pre class="t lt">
+<span class="m">context</span>
+
+<span class="fa">████</span><span class="ea">              </span><span class="ka">│</span><span class="ea"> </span> <span class="i">ctx 20% 200k/1.0M</span>
+
+<span class="fw">████████████</span><span class="pw">▊</span><span class="ew">     </span><span class="kw">│</span><span class="ew"> </span> <span class="i">ctx 64% 640k/1.0M</span>
+
+<span class="fc">█████████████████</span><span class="pc">▎</span><span class="kc">│</span><span class="ec"> </span> <span class="i">ctx 86% 860k/1.0M</span></pre></figure>
+</div>
+<p class="sub">Zoom: the partial cell of the 64% meter. 64% of 20 cells is 12.8 cells, so 12 full cells and <code>▊</code> (6/8).</p>
+<div class="pair">
+<figure><figcaption>dark terminal</figcaption><div class="zoom dk"><div class="cell"></div><div><div class="ladder"><span class="pw">▏</span> <span class="pw">▎</span> <span class="pw">▍</span> <span class="pw">▌</span> <span class="pw">▋</span> <span class="pw">▊</span> <span class="pw">▉</span> <span class="fw">█</span></div><p class="zt">Eight levels per cell. The glyph is fill color #fab219. The rest of the cell is the warning track #473819.</p></div></div></figure>
+<figure><figcaption>light terminal</figcaption><div class="zoom lt"><div class="cell"></div><div><div class="ladder"><span class="pw">▏</span> <span class="pw">▎</span> <span class="pw">▍</span> <span class="pw">▌</span> <span class="pw">▋</span> <span class="pw">▊</span> <span class="pw">▉</span> <span class="fw">█</span></div><p class="zt">Eight levels per cell. The glyph is fill color #fab219. The rest of the cell is the warning track #fcedce.</p></div></div></figure>
+</div>
+</section>
+
+<section><h2>2. Pace meters</h2>
+<p><code>┃</code> marks the share of the window already elapsed. On the track it is ink. Inside the fill it is a notch in the terminal background color. Projected use at reset is used % ÷ elapsed share. At or below 100% the fill is accent and the label is <code>on pace</code>. From 100% to 120% it is warning and <code>ahead</code>. Above 120% it is critical and <code>runs out ~&lt;time&gt;</code>.</p>
+<div class="pair">
+<figure><figcaption>dark terminal</figcaption><pre class="t dk">
+<span class="i">week  </span><span class="fa">████████</span><span class="pa">▋</span><span class="ea">     </span><span class="qa">┃</span><span class="ea">     </span> <span class="i">43%  on pace</span>  <i class="s">↻</i><span class="s"> 1d 23h</span>
+
+<span class="i">week  </span><span class="fw">████████████</span><span class="qfw">┃</span><span class="pw">▎</span><span class="ew">      </span> <span class="i">66%  ahead</span>  <i class="s">↻</i><span class="s"> 2d 19h</span>
+
+<span class="i">week  </span><span class="fc">██████████████</span><span class="qfc">┃</span><span class="fc">████</span><span class="ec"> </span> <span class="i">95%  runs out ~Thu 14:00</span>  <i class="s">↻</i><span class="s"> 2d 2h</span>
+
+<span class="i">5h    </span><span class="fa">█</span><span class="pa">▎</span><span class="ea">       </span><span class="qa">┃</span><span class="ea">          </span> <span class="i">6%   on pace</span>  <i class="s">↻</i><span class="s"> 2h 39m</span></pre></figure>
+<figure><figcaption>light terminal</figcaption><pre class="t lt">
+<span class="i">week  </span><span class="fa">████████</span><span class="pa">▋</span><span class="ea">     </span><span class="qa">┃</span><span class="ea">     </span> <span class="i">43%  on pace</span>  <i class="s">↻</i><span class="s"> 1d 23h</span>
+
+<span class="i">week  </span><span class="fw">████████████</span><span class="qfw">┃</span><span class="pw">▎</span><span class="ew">      </span> <span class="i">66%  ahead</span>  <i class="s">↻</i><span class="s"> 2d 19h</span>
+
+<span class="i">week  </span><span class="fc">██████████████</span><span class="qfc">┃</span><span class="fc">████</span><span class="ec"> </span> <span class="i">95%  runs out ~Thu 14:00</span>  <i class="s">↻</i><span class="s"> 2d 2h</span>
+
+<span class="i">5h    </span><span class="fa">█</span><span class="pa">▎</span><span class="ea">       </span><span class="qa">┃</span><span class="ea">          </span> <span class="i">6%   on pace</span>  <i class="s">↻</i><span class="s"> 2h 39m</span></pre></figure>
+</div>
+<p class="sub">Elapsed and projected at reset: week 72% elapsed, projected 60%. Week 60% elapsed, projected 110%. Week 70% elapsed, projected 136%. 5-hour window 47% elapsed, projected 13%. Reset times are the remaining share of 168 hours or 5 hours.</p>
+</section>
+
+<section><h2>3. Row mini-meters</h2>
+<p>3 cells, 24 levels, colored by context severity.</p>
+<div class="pair">
+<figure><figcaption>dark terminal</figcaption><pre class="t dk">
+<span class="pa">▍</span><span class="ea">  </span> <span class="i">12%</span>
+
+<span class="fa">█</span><span class="pa">▍</span><span class="ea"> </span> <span class="i">45%</span>
+
+<span class="fw">██</span><span class="pw">▏</span> <span class="i">71%</span>
+
+<span class="fc">██</span><span class="pc">▋</span> <span class="i">88%</span></pre></figure>
+<figure><figcaption>light terminal</figcaption><pre class="t lt">
+<span class="pa">▍</span><span class="ea">  </span> <span class="i">12%</span>
+
+<span class="fa">█</span><span class="pa">▍</span><span class="ea"> </span> <span class="i">45%</span>
+
+<span class="fw">██</span><span class="pw">▏</span> <span class="i">71%</span>
+
+<span class="fc">██</span><span class="pc">▋</span> <span class="i">88%</span></pre></figure>
+</div>
+</section>
+
+<section><h2>4. Git diverging bar</h2>
+<p>Removed extends left in red, added extends right in blue, centered on <code>┊</code>. Cells per side = min(5, ⌈2·log10(n+1)⌉).</p>
+<div class="pair">
+<figure><figcaption>dark terminal</figcaption><pre class="t dk">
+   <span class="gr">██</span><span class="m">┊</span><span class="gd">███</span>   <span class="i">−3 +12</span>
+
+ <span class="gr">████</span><span class="m">┊</span><span class="gd">█</span>     <span class="i">−40 +2</span>
+
+     <span class="m">┊</span>      <span class="i">−0 +0</span>
+
+<span class="gr">█████</span><span class="m">┊</span><span class="gd">█████</span> <span class="i">−120 +480</span></pre></figure>
+<figure><figcaption>light terminal</figcaption><pre class="t lt">
+   <span class="gr">██</span><span class="m">┊</span><span class="gd">███</span>   <span class="i">−3 +12</span>
+
+ <span class="gr">████</span><span class="m">┊</span><span class="gd">█</span>     <span class="i">−40 +2</span>
+
+     <span class="m">┊</span>      <span class="i">−0 +0</span>
+
+<span class="gr">█████</span><span class="m">┊</span><span class="gd">█████</span> <span class="i">−120 +480</span></pre></figure>
+</div>
+</section>
+
+<section><h2>5. Row type glyphs</h2>
+<p>Columns: glyph, type, ask, mini-meter, age, PR. Rows that need you are bright. WORKING and WRAP? recede to muted ink. Age turns warning after 15 minutes of waiting on you.</p>
+<div class="pair wide">
+<figure><figcaption>dark terminal</figcaption><pre class="t dk">
+<i class="ac">●</i> <span class="i">PICK      Which timezone drives s…</span> <span class="fw">██</span><span class="pw">▏</span> <span class="i"> 4m</span>
+<i class="ac">●</i> <span class="i">APPROVE   Bash: mise run migrate  </span> <span class="pa">▉</span><span class="ea">  </span> <span class="i"> 1m</span>
+<i class="ac">○</i> <span class="i">YOUR TURN Ready to merge? 1. squa…</span> <span class="fc">██</span><span class="pc">▋</span> <span class="wa">22m</span>
+<i class="ac">◆</i> <span class="i">REVIEW    diff ready, 3 files     </span> <span class="fa">█</span><span class="pa">▍</span><span class="ea"> </span> <span class="i">12m</span> <span class="chip i">#2701</span>
+<i class="m">◌</i> <span class="m">WORKING   drafting register.tsx   </span> <span class="pa">▋</span><span class="ea">  </span> <span class="m">  —</span>
+<i class="ok">✓</i> <span class="m">WRAP?     PR merged · clean       </span> <span class="pa">▌</span><span class="ea">  </span> <span class="m"> 3d</span> <span class="chip m">#2667</span>
+<i class="cr">⚠︎</i> <span class="s">ORPHANED  dir removed, session li…</span> <span class="pa">▎</span><span class="ea">  </span> <span class="s">  —</span></pre></figure>
+<figure><figcaption>light terminal</figcaption><pre class="t lt">
+<i class="ac">●</i> <span class="i">PICK      Which timezone drives s…</span> <span class="fw">██</span><span class="pw">▏</span> <span class="i"> 4m</span>
+<i class="ac">●</i> <span class="i">APPROVE   Bash: mise run migrate  </span> <span class="pa">▉</span><span class="ea">  </span> <span class="i"> 1m</span>
+<i class="ac">○</i> <span class="i">YOUR TURN Ready to merge? 1. squa…</span> <span class="fc">██</span><span class="pc">▋</span> <span class="wa">22m</span>
+<i class="ac">◆</i> <span class="i">REVIEW    diff ready, 3 files     </span> <span class="fa">█</span><span class="pa">▍</span><span class="ea"> </span> <span class="i">12m</span> <span class="chip i">#2701</span>
+<i class="m">◌</i> <span class="m">WORKING   drafting register.tsx   </span> <span class="pa">▋</span><span class="ea">  </span> <span class="m">  —</span>
+<i class="ok">✓</i> <span class="m">WRAP?     PR merged · clean       </span> <span class="pa">▌</span><span class="ea">  </span> <span class="m"> 3d</span> <span class="chip m">#2667</span>
+<i class="cr">⚠︎</i> <span class="s">ORPHANED  dir removed, session li…</span> <span class="pa">▎</span><span class="ea">  </span> <span class="s">  —</span></pre></figure>
+</div>
+</section>
+
+<section><h2>6. Full panel</h2>
+<p>The panel docked on the right third, 52 columns wide. List, then a preview of the selected PICK row, then the footer. The footer holds the weekly and 5-hour pace meters. A version chip joins them only when sessions run different versions.</p>
+<div class="pair wide">
+<figure><figcaption>dark terminal</figcaption><pre class="t dk">
+<span class="b">workstreams</span>  <span class="m">9 · 5 need you</span>
+<i class="i">▶︎</i> <i class="ac">●</i> <span class="i">PICK      Which timezone drives s…</span> <span class="fw">██</span><span class="pw">▏</span> <span class="i"> 4m</span>
+  <i class="ac">●</i> <span class="i">APPROVE   Bash: mise run migrate  </span> <span class="pa">▉</span><span class="ea">  </span> <span class="i"> 1m</span>
+  <i class="ac">○</i> <span class="i">YOUR TURN Ready to merge? 1. squa…</span> <span class="fc">██</span><span class="pc">▋</span> <span class="wa">22m</span>
+  <i class="ac">○</i> <span class="i">YOUR TURN Review notes </span><i class="m">↻</i><span class="m"> resume   </span> <span class="fw">█</span><span class="pw">▉</span><span class="ew"> </span> <span class="wa"> 2h</span> <span class="chip i">#2689</span>
+  <i class="ac">◆</i> <span class="i">REVIEW    diff ready, 3 files     </span> <span class="fa">█</span><span class="pa">▍</span><span class="ea"> </span> <span class="i">12m</span> <span class="chip i">#2701</span>
+  <i class="m">◌</i> <span class="m">WORKING   drafting register.tsx   </span> <span class="pa">▋</span><span class="ea">  </span> <span class="m">  —</span>
+  <i class="m">◌</i> <span class="m">WORKING   running tests           </span> <span class="fa">█</span><span class="pa">▌</span><span class="ea"> </span> <span class="m">  —</span>
+  <i class="ok">✓</i> <span class="m">WRAP?     PR merged · clean       </span> <span class="pa">▌</span><span class="ea">  </span> <span class="m"> 3d</span> <span class="chip m">#2667</span>
+  <i class="cr">⚠︎</i> <span class="s">ORPHANED  dir removed, session li…</span> <span class="pa">▎</span><span class="ea">  </span> <span class="s">  —</span>
+<span class="m">── preview ─────────────────────────────────────────</span>
+ <span class="b">acme-api / send-time-tz</span>
+ <span class="chip i"> Opus 5.5 </span> <span class="s">feat/send-time-tz</span>  <span class="gr">████</span><span class="m">┊</span><span class="gd">█████</span> <span class="i">−37 +142</span>
+ <span class="fw">██████████████</span><span class="pw">▍</span><span class="ew">   </span><span class="kw">│</span><span class="ew"> </span> <span class="i">ctx 72% 720k/1.0M</span>
+
+ <i class="ac">●</i> <span class="i">PICK · Which timezone drives send time?</span>
+   <span class="s">1.</span> <span class="i">User's phone timezone</span>
+   <span class="s">2.</span> <span class="i">Account timezone</span>
+   <span class="s">3.</span> <span class="i">SwitchBird inbox local_time_zone</span>
+   <span class="s">4.</span> <span class="i">Type something else</span>
+
+ <span class="m">── your last instruction</span>
+ <span class="s">wire send time to the per-user schedule</span>
+ <span class="m">── last turn</span>
+ <span class="s">Read schedule.py and sync.py. Found two tz</span>
+ <span class="s">sources; asked which one wins.</span>
+
+ <span class="m">repo</span>  <span class="s">clean · 0 unpushed · no PR</span>
+<span class="m">────────────────────────────────────────────────────</span>
+ <span class="i">week</span>  <span class="fa">████████</span><span class="pa">▋</span><span class="ea">     </span><span class="qa">┃</span><span class="ea">     </span> <span class="i">43% on pace</span> <i class="s">↻</i><span class="s"> 1d 23h</span>
+ <span class="i">5h</span>    <span class="fa">█</span><span class="pa">▎</span><span class="ea">       </span><span class="qa">┃</span><span class="ea">          </span> <span class="i">6% on pace</span> <i class="s">↻</i><span class="s"> 2h 39m</span>
+ <span class="m">tab/j/k move · </span><i class="m">⏎</i><span class="m"> go · a archive · esc close</span></pre></figure>
+<figure><figcaption>light terminal</figcaption><pre class="t lt">
+<span class="b">workstreams</span>  <span class="m">9 · 5 need you</span>
+<i class="i">▶︎</i> <i class="ac">●</i> <span class="i">PICK      Which timezone drives s…</span> <span class="fw">██</span><span class="pw">▏</span> <span class="i"> 4m</span>
+  <i class="ac">●</i> <span class="i">APPROVE   Bash: mise run migrate  </span> <span class="pa">▉</span><span class="ea">  </span> <span class="i"> 1m</span>
+  <i class="ac">○</i> <span class="i">YOUR TURN Ready to merge? 1. squa…</span> <span class="fc">██</span><span class="pc">▋</span> <span class="wa">22m</span>
+  <i class="ac">○</i> <span class="i">YOUR TURN Review notes </span><i class="m">↻</i><span class="m"> resume   </span> <span class="fw">█</span><span class="pw">▉</span><span class="ew"> </span> <span class="wa"> 2h</span> <span class="chip i">#2689</span>
+  <i class="ac">◆</i> <span class="i">REVIEW    diff ready, 3 files     </span> <span class="fa">█</span><span class="pa">▍</span><span class="ea"> </span> <span class="i">12m</span> <span class="chip i">#2701</span>
+  <i class="m">◌</i> <span class="m">WORKING   drafting register.tsx   </span> <span class="pa">▋</span><span class="ea">  </span> <span class="m">  —</span>
+  <i class="m">◌</i> <span class="m">WORKING   running tests           </span> <span class="fa">█</span><span class="pa">▌</span><span class="ea"> </span> <span class="m">  —</span>
+  <i class="ok">✓</i> <span class="m">WRAP?     PR merged · clean       </span> <span class="pa">▌</span><span class="ea">  </span> <span class="m"> 3d</span> <span class="chip m">#2667</span>
+  <i class="cr">⚠︎</i> <span class="s">ORPHANED  dir removed, session li…</span> <span class="pa">▎</span><span class="ea">  </span> <span class="s">  —</span>
+<span class="m">── preview ─────────────────────────────────────────</span>
+ <span class="b">acme-api / send-time-tz</span>
+ <span class="chip i"> Opus 5.5 </span> <span class="s">feat/send-time-tz</span>  <span class="gr">████</span><span class="m">┊</span><span class="gd">█████</span> <span class="i">−37 +142</span>
+ <span class="fw">██████████████</span><span class="pw">▍</span><span class="ew">   </span><span class="kw">│</span><span class="ew"> </span> <span class="i">ctx 72% 720k/1.0M</span>
+
+ <i class="ac">●</i> <span class="i">PICK · Which timezone drives send time?</span>
+   <span class="s">1.</span> <span class="i">User's phone timezone</span>
+   <span class="s">2.</span> <span class="i">Account timezone</span>
+   <span class="s">3.</span> <span class="i">SwitchBird inbox local_time_zone</span>
+   <span class="s">4.</span> <span class="i">Type something else</span>
+
+ <span class="m">── your last instruction</span>
+ <span class="s">wire send time to the per-user schedule</span>
+ <span class="m">── last turn</span>
+ <span class="s">Read schedule.py and sync.py. Found two tz</span>
+ <span class="s">sources; asked which one wins.</span>
+
+ <span class="m">repo</span>  <span class="s">clean · 0 unpushed · no PR</span>
+<span class="m">────────────────────────────────────────────────────</span>
+ <span class="i">week</span>  <span class="fa">████████</span><span class="pa">▋</span><span class="ea">     </span><span class="qa">┃</span><span class="ea">     </span> <span class="i">43% on pace</span> <i class="s">↻</i><span class="s"> 1d 23h</span>
+ <span class="i">5h</span>    <span class="fa">█</span><span class="pa">▎</span><span class="ea">       </span><span class="qa">┃</span><span class="ea">          </span> <span class="i">6% on pace</span> <i class="s">↻</i><span class="s"> 2h 39m</span>
+ <span class="m">tab/j/k move · </span><i class="m">⏎</i><span class="m"> go · a archive · esc close</span></pre></figure>
+</div>
+</section>
+
+<section><h2>7. Status row</h2>
+<p>One colored row under the prompt box, drawn by the mod at the hint-line site. Left: model chip, a 10-cell context meter with its auto-compact tick, branch in secondary ink, and the git diverging bar. Right: the engine's existing hint and mode text in muted ink. The first example is 32% accent with <code>−0 +0</code>. The second is 86% critical with <code>−3 +12</code>.</p>
+<div class="pair stack">
+<figure><figcaption>dark terminal</figcaption><pre class="t dk">
+<span class="m">──────────────────────────────────────────────────────────────────────────────────────────────────────────────</span>
+<span class="i">&gt; █</span>
+<span class="m">──────────────────────────────────────────────────────────────────────────────────────────────────────────────</span>
+  <span class="chip i"> Opus 5.5 </span> <span class="fa">███</span><span class="pa">▎</span><span class="ea">     </span><span class="ka">│</span> <span class="i">32% 317k/1.0M</span><span class="m"> · </span><span class="s">lane-mods</span>      <span class="m">┊</span>      <span class="i">−0 +0</span>       <i class="m">⏵</i><i class="m">⏵</i><span class="m"> auto mode on (shift+tab to cycle)</span>
+
+<span class="m">──────────────────────────────────────────────────────────────────────────────────────────────────────────────</span>
+<span class="i">&gt; █</span>
+<span class="m">──────────────────────────────────────────────────────────────────────────────────────────────────────────────</span>
+  <span class="chip i"> Opus 5.5 </span> <span class="fc">████████</span><span class="pc">▋</span><span class="kc">│</span> <span class="i">86% 860k/1.0M</span><span class="m"> · </span><span class="s">lane-mods</span>    <span class="gr">██</span><span class="m">┊</span><span class="gd">███</span>   <span class="i">−3 +12</span>      <i class="m">⏵</i><i class="m">⏵</i><span class="m"> auto mode on (shift+tab to cycle)</span></pre></figure>
+<figure><figcaption>light terminal</figcaption><pre class="t lt">
+<span class="m">──────────────────────────────────────────────────────────────────────────────────────────────────────────────</span>
+<span class="i">&gt; █</span>
+<span class="m">──────────────────────────────────────────────────────────────────────────────────────────────────────────────</span>
+  <span class="chip i"> Opus 5.5 </span> <span class="fa">███</span><span class="pa">▎</span><span class="ea">     </span><span class="ka">│</span> <span class="i">32% 317k/1.0M</span><span class="m"> · </span><span class="s">lane-mods</span>      <span class="m">┊</span>      <span class="i">−0 +0</span>       <i class="m">⏵</i><i class="m">⏵</i><span class="m"> auto mode on (shift+tab to cycle)</span>
+
+<span class="m">──────────────────────────────────────────────────────────────────────────────────────────────────────────────</span>
+<span class="i">&gt; █</span>
+<span class="m">──────────────────────────────────────────────────────────────────────────────────────────────────────────────</span>
+  <span class="chip i"> Opus 5.5 </span> <span class="fc">████████</span><span class="pc">▋</span><span class="kc">│</span> <span class="i">86% 860k/1.0M</span><span class="m"> · </span><span class="s">lane-mods</span>    <span class="gr">██</span><span class="m">┊</span><span class="gd">███</span>   <span class="i">−3 +12</span>      <i class="m">⏵</i><i class="m">⏵</i><span class="m"> auto mode on (shift+tab to cycle)</span></pre></figure>
+</div>
+<p class="sub">Replaces ccstatusline. Drawn by the mod at the PromptHint site; fallback is a statusLine script emitting ANSI.</p>
+</section>
+
+<section><h2>8. Legend</h2>
+<div class="tw"><table>
+<thead><tr><th>Role</th><th>Dark terminal</th><th>Light terminal</th></tr></thead>
+<tbody>
+<tr><td>Accent fill</td><td><span class="sw" style="background:#3987e5"></span><code>#3987e5</code></td><td><span class="sw" style="background:#2a78d6"></span><code>#2a78d6</code></td></tr>
+<tr><td>Accent track</td><td><span class="sw" style="background:#0d366b"></span><code>#0d366b</code></td><td><span class="sw" style="background:#cde2fb"></span><code>#cde2fb</code></td></tr>
+<tr><td>Warning</td><td><span class="sw" style="background:#fab219"></span><code>#fab219</code></td><td><span class="sw" style="background:#fab219"></span><code>#fab219</code></td></tr>
+<tr><td>Warning track (derived, 20% over surface)</td><td><span class="sw" style="background:#473819"></span><code>#473819</code></td><td><span class="sw" style="background:#fcedce"></span><code>#fcedce</code></td></tr>
+<tr><td>Critical</td><td><span class="sw" style="background:#d03b3b"></span><code>#d03b3b</code></td><td><span class="sw" style="background:#d03b3b"></span><code>#d03b3b</code></td></tr>
+<tr><td>Critical track (derived, 20% over surface)</td><td><span class="sw" style="background:#3e2120"></span><code>#3e2120</code></td><td><span class="sw" style="background:#f3d5d5"></span><code>#f3d5d5</code></td></tr>
+<tr><td>Good</td><td><span class="sw" style="background:#0ca30c"></span><code>#0ca30c</code></td><td><span class="sw" style="background:#0ca30c"></span><code>#0ca30c</code></td></tr>
+<tr><td>Added</td><td><span class="sw" style="background:#3987e5"></span><code>#3987e5</code></td><td><span class="sw" style="background:#2a78d6"></span><code>#2a78d6</code></td></tr>
+<tr><td>Removed</td><td><span class="sw" style="background:#e66767"></span><code>#e66767</code></td><td><span class="sw" style="background:#e34948"></span><code>#e34948</code></td></tr>
+<tr><td>Muted ink</td><td><span class="sw" style="background:#898781"></span><code>#898781</code></td><td><span class="sw" style="background:#898781"></span><code>#898781</code></td></tr>
+<tr><td>Terminal surface (mock)</td><td><span class="sw" style="background:#1a1a19"></span><code>#1a1a19</code></td><td><span class="sw" style="background:#fcfcfb"></span><code>#fcfcfb</code></td></tr>
+<tr><td>Ink (mock)</td><td><span class="sw" style="background:#ffffff"></span><code>#ffffff</code></td><td><span class="sw" style="background:#0b0b0b"></span><code>#0b0b0b</code></td></tr>
+<tr><td>Secondary ink (mock)</td><td><span class="sw" style="background:#c3c2b7"></span><code>#c3c2b7</code></td><td><span class="sw" style="background:#52514e"></span><code>#52514e</code></td></tr>
+</tbody></table></div>
+<div class="tw"><table>
+<thead><tr><th>Gauge</th><th>Accent</th><th>Warning</th><th>Critical</th></tr></thead>
+<tbody>
+<tr><td>Context</td><td>&lt; 60%</td><td>60–80%</td><td>≥ 80%</td></tr>
+<tr><td>Pace (projected at reset = used % ÷ elapsed share)</td><td>≤ 100% · on pace</td><td>100–120% · ahead</td><td>&gt; 120% · runs out ~&lt;time&gt;</td></tr>
+<tr><td>Row age</td><td>—</td><td>&gt; 15m waiting on you</td><td>—</td></tr>
+</tbody></table></div>
+</section>
+</main></body></html>
