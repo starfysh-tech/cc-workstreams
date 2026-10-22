@@ -81,3 +81,7 @@ claude plugin test .
 ```
 
 Each session writes its state to `~/.claude/workstreams/<sessionId>.json`. See Data in `docs/design.md`.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
