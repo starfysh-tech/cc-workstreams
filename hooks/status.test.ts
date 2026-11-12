@@ -58,7 +58,7 @@ const HINT = {
 const texts = async (ui: { findAll: (q: { type: string }) => Promise<{ text: string; props: Record<string, unknown> }[]> }) =>
   ui.findAll({ type: 'Text' })
 
-test('draws model and context, then version, usage and the engine hint without the cycle note or PR', async ($, on) => {
+test('draws model and context, then version and the engine hint without usage, RAM, the cycle note or PR', async ($, on) => {
   world(on, { branch: 'lane-mods' })
   await $.session.start(start)
 
@@ -67,10 +67,8 @@ test('draws model and context, then version, usage and the engine hint without t
   expect(await ui.find({ type: 'Text', text: 'Opus 5.5' })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /32% 320k\/1\.0M/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: ' · v2.1.295' })).toBeDefined()
-  expect(await ui.find({ type: 'Text', text: ' · week ' })).toBeDefined()
-  // 48% used with 6 of 7 days gone: behind an even pace.
-  expect(await ui.find({ type: 'Text', text: ' 48%/86%' })).toBeDefined()
-  expect(await ui.find({ type: 'Text', text: '◇' })).toBeDefined()
+  // Ribbon's band shows usage left; the status line does not repeat it.
+  expect(await ui.find({ type: 'Text', text: /week|5h|RAM|◇|◆/ })).toBeUndefined()
   expect(await ui.find({ type: 'Text', text: ' · ← 5 agents' })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /↻|shift\+tab|PR #/ })).toBeUndefined()
 })
@@ -129,6 +127,17 @@ test('uses the light palette when COLORFGBG says the background is light', async
   expect(fill?.props.color).toBe(ACCENT_LIGHT)
 })
 
+test('shows this session\'s lane, branch and changes in the status line', async ($, on) => {
+  world(on, { branch: 'lane-mods', numstat: '12\t3\ta.ts\n' })
+  await $.session.start(start)
+
+  const ui = await $.ui.mount(HINT)
+
+  expect(await ui.find({ type: 'Text', text: 'repo' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: '  lane-mods  ' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: ' +12' })).toBeDefined()
+})
+
 test('passes to the engine before it has any figures', async ($, on) => {
   world(on)
 
@@ -137,15 +146,14 @@ test('passes to the engine before it has any figures', async ($, on) => {
   expect(await ui.drawn()).toMatchObject(ENGINE)
 })
 
-test('shows this session\'s lane, branch and changes in the band above the prompt', async ($, on) => {
+test('draws only the workstreams opener in the band above the prompt', async ($, on) => {
   world(on, { branch: 'lane-mods', numstat: '12\t3\ta.ts\n' })
   await $.session.start(start)
 
   const ui = await $.ui.mount({ plugin: 'workstreams', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false } } as never)
 
-  expect(await ui.find({ type: 'Link', text: 'repo' })).toMatchObject({ props: { href: 'file:///repo' } })
-  expect(await ui.find({ type: 'Text', text: '  lane-mods  ' })).toBeDefined()
-  expect(await ui.find({ type: 'Text', text: '+12' })).toBeDefined()
+  expect(await ui.find({ type: 'Button', text: 'workstreams' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /lane-mods|\+12/ })).toBeUndefined()
 })
 
 // Other sessions' records, as the 10 s watch reads them.
@@ -174,10 +182,11 @@ test('counts the other sessions that need you and that work, in the status line'
   const all = await texts(await $.ui.mount({ ...HINT } as never))
 
   expect(all.find(t => t.text === ' ●1')).toBeDefined()
+  expect(all.find(t => t.text === ' acme-api / ask')).toBeDefined()
   expect(all.find(t => t.text === ' ◌1')).toBeDefined()
 })
 
-test('names the session that has waited on you longest on the band, with how many more', async ($, on) => {
+test('names the session that has waited on you longest in the status line', async ($, on) => {
   world(on, {
     branch: 'lane-mods',
     records: [
@@ -187,9 +196,8 @@ test('names the session that has waited on you longest on the band, with how man
   })
   await $.session.start(start)
 
-  const ui = await $.ui.mount({ plugin: 'workstreams', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false } } as never)
+  const all = await texts(await $.ui.mount({ ...HINT } as never))
 
-  expect(await ui.find({ type: 'Text', text: 'acme-api / older' })).toBeDefined()
-  expect(await ui.find({ type: 'Text', text: ' · Bash: ls' })).toBeDefined()
-  expect(await ui.find({ type: 'Text', text: ' · +1 more' })).toBeDefined()
+  expect(all.find(t => t.text === ' ●2')).toBeDefined()
+  expect(all.find(t => t.text === ' acme-api / older')).toBeDefined()
 })

@@ -1340,6 +1340,8 @@ export const register: Register = (on, options) => {
     const p = PALETTE[s.isLight ? 'light' : 'dark']
     const o = await read($, others)
     const eighths = eighthsOf(s.percent, METER_CELLS)
+    const lane = s.lane
+    const repo = lane?.repo
     // Neighbouring cells of one color draw as one Text.
     const runs: { text: string; color?: string; track?: string }[] = []
     ramp(METER_CELLS, s.isLight).forEach(({ fill, track }, i) => {
@@ -1350,7 +1352,7 @@ export const register: Register = (on, options) => {
       else runs.push(cell)
     })
 
-    // The engine's hint, less the mode-cycling note and the PR pill: the PR lives in the panel's banner.
+    // The engine's hint, less the mode-cycling note and the PR pill: the lane part shows the PR with its checks.
     const hint = e.props.hint
       .replace('(shift+tab to cycle)', '')
       .split(' · ')
@@ -1369,56 +1371,12 @@ export const register: Register = (on, options) => {
             </Text>
           ))}
           <Text>{` ${s.percent}% ${tokens(s.tokens)}/${tokens(s.window)}`}</Text>
-          {s.version && <Text dimColor>{` · v${s.version}`}</Text>}
-          {s.ram && <Text dimColor>{` · RAM ${Math.round((s.ram.used / s.ram.total) * 100)}%`}</Text>}
           {o && (o.needYou > 0 || o.working > 0) && <Text dimColor> ·</Text>}
           {o && o.needYou > 0 && <Text color={p.accent}>{` ●${o.needYou}`}</Text>}
+          {o?.oldest && <Text bold>{` ${o.oldest.lane}`}</Text>}
           {o && o.working > 0 && <Text dimColor>{` ◌${o.working}`}</Text>}
-          {(s.limits ?? [])
-            .filter(l => LIMIT_LABEL[l.kind])
-            .map(l => [l, paceOf(l, s.now ?? 0)] as const)
-            .map(([l, pace]) => [
-              <Text dimColor>{` · ${LIMIT_LABEL[l.kind]} `}</Text>,
-              ...Array.from({ length: 5 }, (_, i) => {
-                const left = Math.round((Math.min(100, l.percentUsed) / 100) * 40) - i * 8
-                return left >= 8 ? (
-                  <Text color={p.accent}>█</Text>
-                ) : left > 0 ? (
-                  <Text color={p.accent} backgroundColor={p.track}>
-                    {EIGHTHS[left]}
-                  </Text>
-                ) : (
-                  <Text backgroundColor={p.track}> </Text>
-                )
-              }),
-              <Text>{` ${pace.ratio}`}</Text>,
-              pace.elapsed === undefined ? null : <Text color={pace.isAhead ? WARNING : MUTED}>{pace.isAhead ? '◆' : '◇'}</Text>,
-            ])}
-          {hint && <Text dimColor>{` · ${hint}`}</Text>}
-        </Text>
-      </Box>
-    )
-  })
-
-  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    const lane = (await read($, status))?.lane
-    if (e.props.hasSurvey || !lane) return next(e)
-    const elements = $.ui.resolve(e)
-    const { Box, Text, Button } = elements
-    const Link = 'Link' in elements ? elements.Link : undefined
-    const p = PALETTE[(await read($, status))?.isLight ? 'light' : 'dark']
-    const { repo, pr } = lane
-    const oldest = (await read($, others))?.oldest
-    const openAt = (id: string) => async () => {
-      await update($, selected, () => id)
-      await openPanel($)
-    }
-    return (
-      <Box flexDirection="column">
-      <Box key="lane" flexDirection="row">
-        {Link && lane.cwd ? <Link href={`file://${lane.cwd}`} label={lane.name} /> : <Text bold>{lane.name}</Text>}
-        <Box flexShrink={1}>
-        <Text wrap="truncate-end">
+          {lane && <Text dimColor> · </Text>}
+          {lane && <Text bold>{lane.name}</Text>}
           {repo && <Text dimColor>{`  ${repo.branch}  `}</Text>}
           {repo && <Text color={p.removed}>{'█'.repeat(gitCells(repo.removed))}</Text>}
           {repo && <Text dimColor>┊</Text>}
@@ -1427,30 +1385,24 @@ export const register: Register = (on, options) => {
           {repo && <Text color={p.added}>{` +${repo.added}`}</Text>}
           {repo && !repo.isClean && <Text color={WARNING}> ✎</Text>}
           {repo && (repo.unpushed ?? 0) > 0 && <Text color={WARNING}>{` ↑${repo.unpushed}`}</Text>}
-          {pr && <Text>  </Text>}
+          {lane?.pr && <Text>{`  ${prText(lane.pr)}`}</Text>}
+          {s.version && <Text dimColor>{` · v${s.version}`}</Text>}
+          {hint && <Text dimColor>{` · ${hint}`}</Text>}
         </Text>
-        </Box>
-        {pr && <Box flexShrink={0}>{Link && pr.url ? <Link href={pr.url} label={prText(pr)} /> : <Text>{prText(pr)}</Text>}</Box>}
-        <Box flexGrow={1} />
-        <Box flexShrink={0}>
-          <Button key="open-panel" action={OPEN_ACTION} plain dimColor onPress={() => void togglePanel($)}>
-            workstreams
-          </Button>
-        </Box>
       </Box>
-      {/* The session that has waited on you longest, so it is seen without opening the panel. */}
-      {oldest && (
-        <Box key="alert" flexDirection="row">
-          <Button key="alert" plain onPress={openAt(oldest.id)}>
-            <Text wrap="truncate-end">
-              <Text color={p.accent}>● </Text>
-              <Text bold>{oldest.lane}</Text>
-              <Text>{oldest.ask ? ` · ${oldest.ask}` : ' needs you'}</Text>
-              {oldest.more > 0 && <Text dimColor>{` · +${oldest.more} more`}</Text>}
-            </Text>
-          </Button>
-        </Box>
-      )}
+    )
+  })
+
+  // The band holds only the opener: ctrl+q reaches the panel through this Button's action, and status line Buttons are never pressed.
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    if (e.props.hasSurvey || !(await read($, status))?.lane) return next(e)
+    const { Box, Button } = $.ui.resolve(e)
+    return (
+      <Box flexDirection="row">
+        <Box flexGrow={1} />
+        <Button key="open-panel" action={OPEN_ACTION} plain dimColor onPress={() => void togglePanel($)}>
+          workstreams
+        </Button>
       </Box>
     )
   })

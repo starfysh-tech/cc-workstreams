@@ -11,8 +11,8 @@ It is a personal mod, built for one setup: macOS, cmux, and the `gh` CLI. Other 
 ## What it adds
 
 - **Panel** (ctrl+q or `/ws`): every session, grouped by project and sorted by urgency. The selected session's lane shows its branch, git diff, PR and checks, then a preview of its last turn and changed files. Usage pace meters and RAM sit at the bottom.
-- **Band** above the prompt: this lane's folder, branch, git diff and PR, and a line naming the session that has waited on you longest.
-- **Status line** under the prompt: model, context meter, version, RAM, 5-hour and week usage against pace, and counts of other sessions that need you or work.
+- **Band** above the prompt: a `workstreams` Button that opens the panel. ctrl+q reaches the panel through it.
+- **Status line** under the prompt: model, context meter, counts of other sessions that need you or work with the name of the one that has waited longest, this lane's folder, branch, git diff and PR, then the version. Usage is left to the ribbon mod.
 - **Toast** when another session turns to need you.
 
 ## Requirements
