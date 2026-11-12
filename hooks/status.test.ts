@@ -146,7 +146,7 @@ test('passes to the engine before it has any figures', async ($, on) => {
   expect(await ui.drawn()).toMatchObject(ENGINE)
 })
 
-test('draws the workstreams opener after the band the plugins beneath draw', async ($, on) => {
+test('draws the workstreams opener on a row above the band the plugins beneath draw', async ($, on) => {
   world(on, { branch: 'lane-mods', numstat: '12\t3\ta.ts\n' })
   await $.session.start(start)
 
