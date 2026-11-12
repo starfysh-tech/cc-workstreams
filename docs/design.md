@@ -36,7 +36,7 @@ Mock of every state: [mock.html](mock.html). The mock predates the build; where 
 
 ## Screens
 
-- **Band above the prompt.** Only the `workstreams` Button that opens the panel, at the right end. It stays because ctrl+q reaches the panel through its action (see Learned limits). The ribbon mod draws its own band with usage and cache state.
+- **Band above the prompt.** The `workstreams` Button that opens the panel, at the right end of the band the plugins beneath draw (ribbon), so their band stays on screen. It stays because ctrl+q reaches the panel through its action (see Learned limits). The ribbon mod draws its own band with usage and cache state.
 - **Status line** under the prompt, one line: model, context meter with % and tokens, `●n` other sessions that need you with the name of the one that has waited longest, and `◌n` that work (from records, so background sessions are left out), this lane's folder, branch, git bar, −/+ counts, ✎ for uncommitted changes, ↑n for unpushed commits, the PR with its checks, the version, then the engine's hint less `(shift+tab to cycle)` and the PR pill. Usage and RAM are left out: the ribbon mod shows usage, and the panel shows usage pace and RAM.
 - **Toast** at the top right when another session turns to need you.
 - **Panel.** ctrl+q, the band's `workstreams` Button, or `/ws` opens it; ctrl+q or esc closes it. It docks on the right beside a fullscreen transcript, or opens above the prompt otherwise. Top to bottom, each part at a fixed height:

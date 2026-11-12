@@ -146,13 +146,14 @@ test('passes to the engine before it has any figures', async ($, on) => {
   expect(await ui.drawn()).toMatchObject(ENGINE)
 })
 
-test('draws only the workstreams opener in the band above the prompt', async ($, on) => {
+test('draws the workstreams opener after the band the plugins beneath draw', async ($, on) => {
   world(on, { branch: 'lane-mods', numstat: '12\t3\ta.ts\n' })
   await $.session.start(start)
 
   const ui = await $.ui.mount({ plugin: 'workstreams', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false } } as never)
 
   expect(await ui.find({ type: 'Button', text: 'workstreams' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'engine hint line' })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /lane-mods|\+12/ })).toBeUndefined()
 })
 

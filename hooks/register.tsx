@@ -1394,12 +1394,16 @@ export const register: Register = (on, options) => {
   })
 
   // The band holds only the opener: ctrl+q reaches the panel through this Button's action, and status line Buttons are never pressed.
+  // It sits at the end of the row the plugins beneath draw, so their band (ribbon) stays on screen.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey || !(await read($, status))?.lane) return next(e)
+    const beneath = await next(e)
     const { Box, Button } = $.ui.resolve(e)
     return (
       <Box flexDirection="row">
-        <Box flexGrow={1} />
+        <Box flexGrow={1} flexShrink={1}>
+          {beneath}
+        </Box>
         <Button key="open-panel" action={OPEN_ACTION} plain dimColor onPress={() => void togglePanel($)}>
           workstreams
         </Button>
